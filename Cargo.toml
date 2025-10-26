@@ -1,0 +1,120 @@
+[package]
+authors = ["kb <kalyanbtl@gmail.com>"]
+edition = "2018"
+readme = "README.md"
+name = "glacier-benchmark"
+version = "0.1.0"
+
+[dependencies]
+msp430 = { version = "0.4.0", features = ["critical-section-single-core"] }
+msp430-rt = "0.4.0"
+panic-msp430 = "0.4.0"
+
+# Use an existing PAC to ensure examples and the crate itself compiles. If
+# targeting a different device, you may need to change the version of your
+# crate. Your PAC must be generated with svd2rust version v0.20.0 or later.
+[dependencies.msp430fr5994]
+version = "0.2.0"
+features = ["rt", "critical-section"]
+
+
+
+# Individual benchmark binaries
+[[bin]]
+name = "cem"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "rsa"
+overflow-checks = false 
+test = false
+bench = false
+
+[[bin]]
+name = "cuckoo"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "blowfish"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "activity_recognition"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "bitcount"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "bitcount_cmp"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "dnn"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "event_monitor"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "kvstore"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "message_queue"
+overflow-checks = false
+test = false
+bench = false
+
+[[bin]]
+name = "periodic_sensing"
+test = false
+bench = false
+
+[profile.release]
+opt-level = "s"        # Optimize aggressively for size
+lto = "fat"            # Full Link-Time Optimization across all crates
+codegen-units = 1      # Single codegen unit for better optimization
+# panic = "abort"        # Abort on panic (smaller code size)
+# strip = true           # Strip symbols from binary
+# overflow-checks = false # Disable overflow checks in release
+# debug = false          # No debug info
+# debug-assertions = false # Disable debug assertions
+
+# # Alternative performance-optimized profile
+# [profile.release-perf]
+# inherits = "release"
+# opt-level = 3          # Maximum performance optimization
+# lto = "fat"
+# codegen-units = 1
+# panic = "abort"
+# strip = true
+
+# # Size-optimized profile (even more aggressive)
+# [profile.release-size]
+# inherits = "release"
+# opt-level = "s"        # Maximum size optimization
+# lto = "fat"
+# codegen-units = 1
+# panic = "abort"
+# strip = true
