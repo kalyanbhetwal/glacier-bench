@@ -91,6 +91,11 @@ name = "periodic_sensing"
 test = false
 bench = false
 
+[[bin]]
+name = "nested_interrupts"
+test = false
+bench = false
+
 [profile.release]
 opt-level = "s"        # Optimize aggressively for size
 lto = "fat"            # Full Link-Time Optimization across all crates
