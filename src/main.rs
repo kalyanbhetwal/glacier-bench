@@ -16,7 +16,7 @@ use msp430_rt::interrupt;
 // Bring interrupt vectors into scope so the linker can see them; enabling the "rt"
 // feature of msp430fr5994 transitively enables the "device" feature of msp430-rt.
 // This prevents default interrupt vectors from being generated.
-use msp430fr5994;
+use msp430fr5994;   
 
 mod checkpoint;
 // #[link_section = ".fram"]
@@ -72,7 +72,6 @@ unsafe fn  main() -> ! {
     //save_main_stack(0x0011, r0);  //from base stack and current sp
     //set sp1 with current sp value
 
-    checkpoint_main(sp1, spr);
     asm!("mov pc, r4");  // this will be the return poiint after handling power failure
 
 

@@ -1,6 +1,5 @@
 #![allow(unsafe_code, non_upper_case_globals)]
 
-use core::mem;
 use core::ptr;
 use core::arch::asm;
 
@@ -167,7 +166,7 @@ pub fn checkpoint(c_type: bool) {
 
         if c_type {
             // Write magic number for JIT checkpoint
-            ptr::write_volatile(fram_start_address as *mut u16, 0xDEAD);
+            ptr::write_volatile(fram_start_address as *mut u16, 0xFEAD);
         } else {
             // Write magic number for static checkpoint
             ptr::write_volatile(fram_start_address as *mut u16, 0x0001);
@@ -239,94 +238,171 @@ pub fn restore_globals() {
 
 #[no_mangle]
 pub unsafe fn restore() -> bool {
-        let mut fram_start_address = 0x9DC0;
-        let packet_size = ptr::read_volatile(fram_start_address as *const u16);
+    // Boundary marker constants
+    const BOUNDARY_NORMAL: u16 = 0xBEEF;
+    const BOUNDARY_DISCARD: u16 = 0xDEAD;
+    const BOUNDARY_IMMEDIATE: u16 = 0xCAFE;
+    const STACK_END_MARKER: u16 = 0xF1F1;
 
-        asm!("NOP");
-        asm!("NOP");
-        asm!("NOP");
-        
-        if packet_size == 0  || packet_size == 0xFFFF{
-            return false;
+    let mut fram_addr = 0x9DC0;
+    let packet_size = ptr::read_volatile(fram_addr as *const u16);
+
+    asm!("NOP");
+    asm!("NOP");
+    asm!("NOP");
+
+    // Check if valid checkpoint exists
+    if packet_size == 0 || packet_size == 0xFFFF {
+        return false;
+    }
+
+    fram_addr += 2;
+
+    // Read magic number (checkpoint type)
+    let magic = ptr::read_volatile(fram_addr as *const u16);
+    if magic == 0x0001 {
+        // static checkpoint - could restore globals here if needed
+        // restore_globals();
+        // *counter = 0;
+    }
+
+    fram_addr += 2;
+
+    // Initialize stack pointer to top of RAM
+    let mut ram_sp: u16 = 0x3C00;
+
+    // Track boundary transitions for PC replacement
+    let mut prev_boundary: u16 = BOUNDARY_NORMAL;  // Start with NORMAL
+    let mut active_return_address: u16 = 0;
+
+    // Restore stack contents by parsing task frames
+    // Frame structure in FRAM: [PC][SR][boundary][stack_size][saved_regs][locals]
+    // stack_size = size of [PC][SR][saved_regs][locals] (includes PC+SR, excludes boundary+stack_size)
+    loop {
+        // Read PC
+        let pc = ptr::read_volatile(fram_addr as *const u16);
+
+        // Check if we've reached the end of stack marker
+        if pc == STACK_END_MARKER {
+            fram_addr += 2;
+            break;
         }
 
-        fram_start_address += 2;
+        // Read SR, boundary, stack_size
+        let sr = ptr::read_volatile((fram_addr + 2) as *const u16);
+        let curr_boundary = ptr::read_volatile((fram_addr + 4) as *const u16);
+        let stack_size = ptr::read_volatile((fram_addr + 6) as *const u16);
 
-        if ptr::read_volatile(fram_start_address as *const u16) == 0xDEAD {
-           // restore_globals();
-           // *counter = 0;
+        // Handle PC replacement based on boundary transitions
+        if prev_boundary != BOUNDARY_DISCARD && curr_boundary == BOUNDARY_DISCARD {
+            // Transition: non-DEAD -> DEAD - save PC from discard task
+            active_return_address = pc;
         }
 
-        fram_start_address += 2;
+        // Handle restoration based on boundary type
+        if curr_boundary == BOUNDARY_DISCARD {
+            // Skip discard tasks - don't copy to RAM stack
+            // Jump: boundary(2) + stack_size(2) + data(stack_size which includes PC+SR)
+            fram_addr += 4 + stack_size;
+        } else if prev_boundary == BOUNDARY_DISCARD && curr_boundary != BOUNDARY_DISCARD {
+            // Transition: DEAD -> non-DEAD - restore with replaced PC
 
-        // Set up r0 with fram_start_address for assembly
-        asm!(
-            "mov.w {0}, r4",
-            in(reg) fram_start_address as u16
-        );
+            // Push replaced PC
+            ram_sp -= 2;
+            ptr::write_volatile(ram_sp as *mut u16, active_return_address);
 
-        // Set up stack pointer to end of RAM
-        asm!(
-            "mov.w #0x3C00, r1"
-        );
-        // Set up r6 with stack end marker (0xF1F1)
-        asm!(
-            "mov.w #0xF1F1, r6"
-        );
+            // Copy SR and rest of frame data (stack_size - 2 bytes, excluding PC)
+            if stack_size > 2 {
+                ptr::copy_nonoverlapping(
+                    (fram_addr + 2) as *const u16,  // Start at SR
+                    ram_sp.wrapping_sub(stack_size - 2) as *mut u16,
+                    ((stack_size - 2) / 2) as usize
+                );
+                ram_sp = ram_sp.wrapping_sub(stack_size - 2);
+            }
 
-        //Restore stack contents
-        asm!(
-            "1:
-            mov.w @r4+, r5
-            cmp.w r6, r5
-            jeq 2f
-            push r5
-            jmp 1b
-            2:"
-        );
+            // Push boundary and stack_size
+            ram_sp -= 2;
+            ptr::write_volatile(ram_sp as *mut u16, curr_boundary);
+            ram_sp -= 2;
+            ptr::write_volatile(ram_sp as *mut u16, stack_size);
 
-        asm!("NOP");
-        asm!("NOP");            
-       // Restore registers
-        asm!(
-            "mov.w @r4+, r4
-            mov.w @r4+, r5
-            mov.w @r4+, r6
-            mov.w @r4+, r7
-            mov.w @r4+, r8
-            mov.w @r4+, r9
-            mov.w @r4+, r10
-            mov.w @r4+, r11
-            mov.w @r4+, r12
-            mov.w @r4+, r13
-            mov.w @r4+, r14
-            mov.w @r4+, r15"
-        );
-        asm!("ret");
+            // Jump to next frame
+            fram_addr += 4 + stack_size;
+        } else {
+            // Normal case: restore task as-is
+
+            // Copy stack_size bytes (PC, SR, saved_regs, locals)
+            if stack_size > 0 {
+                ptr::copy_nonoverlapping(
+                    fram_addr as *const u16,
+                    ram_sp.wrapping_sub(stack_size) as *mut u16,
+                    (stack_size / 2) as usize
+                );
+                ram_sp = ram_sp.wrapping_sub(stack_size);
+            }
+
+            // Push boundary and stack_size
+            ram_sp -= 2;
+            ptr::write_volatile(ram_sp as *mut u16, curr_boundary);
+            ram_sp -= 2;
+            ptr::write_volatile(ram_sp as *mut u16, stack_size);
+
+            // Jump to next frame
+            fram_addr += 4 + stack_size;
+        }
+
+        prev_boundary = curr_boundary;
+    }
+
+    // Update actual stack pointer
+    asm!(
+        "mov.w {0}, r1",
+        in(reg) ram_sp
+    );
+
+    // Restore CPU registers (r4-r15) from FRAM
+    // fram_addr now points to saved registers
+    let r4  = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r5  = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r6  = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r7  = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r8  = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r9  = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r10 = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r11 = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r12 = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r13 = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r14 = ptr::read_volatile(fram_addr as *const u16); fram_addr += 2;
+    let r15 = ptr::read_volatile(fram_addr as *const u16);
+
+    // Restore all registers using assembly
+    asm!(
+        "mov.w {r4}, r4
+         mov.w {r5}, r5
+         mov.w {r6}, r6
+         mov.w {r7}, r7
+         mov.w {r8}, r8
+         mov.w {r9}, r9
+         mov.w {r10}, r10
+         mov.w {r11}, r11
+         mov.w {r12}, r12
+         mov.w {r13}, r13
+         mov.w {r14}, r14
+         mov.w {r15}, r15",
+        r4 = in(reg) r4,
+        r5 = in(reg) r5,
+        r6 = in(reg) r6,
+        r7 = in(reg) r7,
+        r8 = in(reg) r8,
+        r9 = in(reg) r9,
+        r10 = in(reg) r10,
+        r11 = in(reg) r11,
+        r12 = in(reg) r12,
+        r13 = in(reg) r13,
+        r14 = in(reg) r14,
+        r15 = in(reg) r15,
+    );
+
     return true;
 }
-
-// pub fn delete_pg(page: u32){
-//     unsafe{
-//     let mut dp = Peripherals::steal();
-//     let mut flash= &mut dp.FLASH;
-//     unlock(&mut flash); 
-//     wait_ready(&flash);
-//     erase_page(&mut flash,  page);
-//     }
-// }
-// pub fn delete_all_pg(){
-//     let start_address = 0x0803_0000;
-//     unsafe{
-//         let mut dp = Peripherals::steal();
-//         let mut flash= &mut dp.FLASH;
-//         for i in 0..25{
-//             let page = start_address + i * 2*1024;
-//             unlock(&mut flash); 
-//             wait_ready(&flash);
-//             erase_page(&mut flash,  page);
-//         }
-//        // drop(flash);
-//     }
-
-// }

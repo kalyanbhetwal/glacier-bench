@@ -9,6 +9,7 @@ version = "0.1.0"
 msp430 = { version = "0.4.0", features = ["critical-section-single-core"] }
 msp430-rt = "0.4.0"
 panic-msp430 = "0.4.0"
+libm = "0.2"
 
 # Use an existing PAC to ensure examples and the crate itself compiles. If
 # targeting a different device, you may need to change the version of your
@@ -22,67 +23,56 @@ features = ["rt", "critical-section"]
 # Individual benchmark binaries
 [[bin]]
 name = "cem"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "rsa"
-overflow-checks = false 
 test = false
 bench = false
 
 [[bin]]
 name = "cuckoo"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "blowfish"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "activity_recognition"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "bitcount"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "bitcount_cmp"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "dnn"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "event_monitor"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "kvstore"
-overflow-checks = false
 test = false
 bench = false
 
 [[bin]]
 name = "message_queue"
-overflow-checks = false
 test = false
 bench = false
 
