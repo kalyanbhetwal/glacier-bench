@@ -5,14 +5,7 @@
 extern crate panic_msp430;
 
 use msp430_rt::entry;
-use libm::sqrt;
 use core::ptr::{read_volatile, write_volatile};
-
-// Helper function for integer square root using libm
-#[inline(always)]
-fn sqrt16(val: u32) -> u16 {
-    sqrt(val as f64) as u16
-}
 
 // GPIO toggle for debugging/measurement
 #[inline(always)]
@@ -77,8 +70,8 @@ type accelWindow = [accelReading; ACCEL_WINDOW_SIZE as usize];
 
 #[allow(non_camel_case_types)]
 struct features_t {
-    meanmag: u16,
-    stddevmag: u16,
+    meanmag: u32,      // Squared magnitude (avoids sqrt)
+    stddevmag: u32,    // Squared magnitude (avoids sqrt)
 }
 
 #[allow(non_camel_case_types)]
@@ -223,13 +216,14 @@ fn featurize(features:&mut features_t, aWin:&accelWindow) -> ()
     stddev.y >>= 2;
     stddev.z >>= 2;
 
+    // Store squared magnitudes directly (avoids sqrt computation)
     let meanmag:u32 = mean.x as u32*mean.x as u32 + mean.y as u32 *mean.y as u32+
 	mean.z as u32*mean.z as u32 ;
     let stddevmag:u32 = stddev.x as u32*stddev.x as u32 + stddev.y as u32*stddev.y as u32
 	+ stddev.z as u32 *stddev.z as u32;
 
-    features.meanmag   = sqrt16(meanmag);
-    features.stddevmag = sqrt16(stddevmag);
+    features.meanmag   = meanmag;
+    features.stddevmag = stddevmag;
 
     //LOG("featurize: mean %u sd %u\r\n", features->meanmag, features->stddevmag);
 }
