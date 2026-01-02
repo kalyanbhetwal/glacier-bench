@@ -9,9 +9,9 @@ target triple = "msp430-unknown-none-elf"
 @IO_NAME = dso_local local_unnamed_addr constant ptr @readSensor, align 2
 @_ZN20activity_recognition12SENSOR_VALUE17h68811d6d7ef1959bE = internal global [1 x i8] zeroinitializer, align 1
 @_ZN20activity_recognition11SENSOR_SEED17h8bbce9cf5de25225E = internal global [2 x i8] c"\01\00", align 2
-@_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d068COUNT_NV17h2406bbd052944555E.0 = internal unnamed_addr global i16 1, section ".fram", align 2
-@_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d068MODEL_NV17h167a70abab780377E = internal global [256 x i8] zeroinitializer, section ".fram", align 2
-@_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d067SEED_NV17hc7d43817413acf21E.0 = internal unnamed_addr global i16 1, section ".fram", align 2
+@_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94778COUNT_NV17h31d971a6cebe5758E.0 = internal unnamed_addr global i16 1, section ".fram", align 2
+@_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94778MODEL_NV17hca5d0bc54dcca426E = internal global [256 x i8] zeroinitializer, section ".fram", align 2
+@_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94777SEED_NV17hdaf2501ddf8533dfE.0 = internal unnamed_addr global i16 1, section ".fram", align 2
 @__RESET_VECTOR = dso_local local_unnamed_addr constant ptr @Reset, section ".__RESET_VECTOR", align 2
 @__INTERRUPTS = dso_local constant <{ [52 x i8], ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }> <{ [52 x i8] zeroinitializer, ptr @LEA, ptr @PORT8, ptr @PORT7, ptr @EUSCI_B3, ptr @EUSCI_B2, ptr @EUSCI_B1, ptr @EUSCI_A3, ptr @EUSCI_A2, ptr @PORT6, ptr @PORT5, ptr @TIMER4_A1, ptr @TIMER4_A0, ptr @AES256, ptr @RTC_C, ptr @PORT4, ptr @PORT3, ptr @TIMER3_A1, ptr @TIMER3_A0, ptr @PORT2, ptr @TIMER2_A1, ptr @TIMER2_A0, ptr @PORT1, ptr @TIMER1_A1, ptr @TIMER1_A0, ptr @DMA, ptr @EUSCI_A1, ptr @TIMER0_A1, ptr @TIMER0_A0, ptr @ADC12_B, ptr @EUSCI_B0, ptr @EUSCI_A0, ptr @WDT, ptr @TIMER0_B1, ptr @TIMER0_B0, ptr @COMP_E, ptr @UNMI, ptr @SYSNMI }>, section ".vector_table.interrupts", align 2
 @DEVICE_PERIPHERALS = dso_local local_unnamed_addr global [1 x i8] zeroinitializer, align 1
@@ -239,8 +239,10 @@ bb7:                                              ; preds = %_ZN20activity_recog
 define dso_local msp430_intrcc void @TIMER0_A0() unnamed_addr #3 {
 start:
   %0 = load volatile i16, ptr @_ZN20activity_recognition11SENSOR_SEED17h8bbce9cf5de25225E, align 2
-  %_2.i = urem i16 %0, 85
-  %_0.i1 = trunc nuw nsw i16 %_2.i to i8
+  %1 = trunc i16 %0 to i8
+  %2 = mul i8 %1, 13
+  %3 = add i8 %2, 7
+  %_0.i1 = and i8 %3, 127
   store volatile i8 %_0.i1, ptr @_ZN20activity_recognition12SENSOR_VALUE17h68811d6d7ef1959bE, align 1
   %_0.i = add i16 %0, 1
   store volatile i16 %_0.i, ptr @_ZN20activity_recognition11SENSOR_SEED17h8bbce9cf5de25225E, align 2
@@ -272,7 +274,7 @@ start:
   store volatile i16 %3, ptr inttoptr (i16 834 to ptr), align 2
   store volatile i16 528, ptr inttoptr (i16 832 to ptr), align 64
   tail call void asm sideeffect "nop { eint { nop", "~{sr},~{memory}"() #12, !srcloc !24
-  %.pre = load i16, ptr @_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d067SEED_NV17hc7d43817413acf21E.0, align 2
+  %.pre = load i16, ptr @_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94777SEED_NV17hdaf2501ddf8533dfE.0, align 2
   br label %bb2.i
 
 bb2.i:                                            ; preds = %bb18.i, %start
@@ -280,9 +282,9 @@ bb2.i:                                            ; preds = %bb18.i, %start
   %prev_pin_state.i.sroa.0.0 = phi i8 [ 3, %start ], [ %prev_pin_state.i.sroa.0.1, %bb18.i ]
   call void @llvm.lifetime.start.p0(i64 2, ptr nonnull %localSeed.i)
   store i16 %4, ptr %localSeed.i, align 2
-  %_4.i = load i16, ptr @_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d068COUNT_NV17h2406bbd052944555E.0, align 2, !noalias !25, !noundef !1
+  %_4.i = load i16, ptr @_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94778COUNT_NV17h31d971a6cebe5758E.0, align 2, !noalias !25, !noundef !1
   %5 = add i16 %_4.i, 1
-  store i16 %5, ptr @_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d068COUNT_NV17h2406bbd052944555E.0, align 2, !noalias !25
+  store i16 %5, ptr @_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94778COUNT_NV17h31d971a6cebe5758E.0, align 2, !noalias !25
   switch i16 %_4.i, label %bb1.i [
     i16 0, label %bb12.i1.thread
     i16 1, label %bb12.i1.thread
@@ -307,19 +309,19 @@ bb12.i1.thread:                                   ; preds = %bb2.i, %bb2.i
 
 bb4.i:                                            ; preds = %bb12.i1
 ; call activity_recognition::train
-  call fastcc void @_ZN20activity_recognition5train17ha84e3cf87731bf5cE(ptr noalias noundef nonnull align 2 dereferenceable(128) @_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d068MODEL_NV17h167a70abab780377E, ptr noalias noundef align 2 dereferenceable(2) %localSeed.i) #12
+  call fastcc void @_ZN20activity_recognition5train17ha84e3cf87731bf5cE(ptr noalias noundef nonnull align 2 dereferenceable(128) @_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94778MODEL_NV17hca5d0bc54dcca426E, ptr noalias noundef align 2 dereferenceable(2) %localSeed.i) #12
   br label %bb18.i
 
 bb18.i:                                           ; preds = %bb12.i1.thread, %bb1.i, %bb12.i1, %bb12.i, %_ZN20activity_recognition9recognize17h09b903b76e1f2459E.exit, %bb6.i, %bb4.i
   %prev_pin_state.i.sroa.0.1 = phi i8 [ 3, %bb12.i ], [ 0, %_ZN20activity_recognition9recognize17h09b903b76e1f2459E.exit ], [ 1, %bb6.i ], [ 2, %bb4.i ], [ 2, %bb12.i1 ], [ 3, %bb1.i ], [ 1, %bb12.i1.thread ]
   %_23.i = load i16, ptr %localSeed.i, align 2, !noundef !1
-  store i16 %_23.i, ptr @_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d067SEED_NV17hc7d43817413acf21E.0, align 2
+  store i16 %_23.i, ptr @_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94777SEED_NV17hdaf2501ddf8533dfE.0, align 2
   call void @llvm.lifetime.end.p0(i64 2, ptr nonnull %localSeed.i)
   br label %bb2.i
 
 bb6.i:                                            ; preds = %bb12.i1.thread
 ; call activity_recognition::train
-  call fastcc void @_ZN20activity_recognition5train17ha84e3cf87731bf5cE(ptr noalias noundef nonnull align 2 dereferenceable(128) getelementptr inbounds nuw (i8, ptr @_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d068MODEL_NV17h167a70abab780377E, i16 128), ptr noalias noundef align 2 dereferenceable(2) %localSeed.i) #12
+  call fastcc void @_ZN20activity_recognition5train17ha84e3cf87731bf5cE(ptr noalias noundef nonnull align 2 dereferenceable(128) getelementptr inbounds nuw (i8, ptr @_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94778MODEL_NV17hca5d0bc54dcca426E, i16 128), ptr noalias noundef align 2 dereferenceable(2) %localSeed.i) #12
   br label %bb18.i
 
 bb8.i:                                            ; preds = %bb2.i, %bb2.i
@@ -369,7 +371,7 @@ _ZN20activity_recognition9recognize17h09b903b76e1f2459E.exit: ; preds = %_ZN20ac
 
 bb12.i:                                           ; preds = %bb1.i, %bb2.i
   store i16 1, ptr %localSeed.i, align 2
-  store i16 1, ptr @_ZN20activity_recognition16q225074qnb739d0616q225074qnb739d068COUNT_NV17h2406bbd052944555E.0, align 2
+  store i16 1, ptr @_ZN20activity_recognition16a2e08g0gfjin947716a2e08g0gfjin94778COUNT_NV17h31d971a6cebe5758E.0, align 2
   store i8 1, ptr @DEVICE_PERIPHERALS, align 1
   %14 = load volatile i8, ptr inttoptr (i16 514 to ptr), align 2
   %_4.i2 = xor i8 %14, 1
@@ -600,7 +602,7 @@ attributes #14 = { nounwind memory(inaccessiblemem: readwrite) }
 !21 = distinct !{!21, !19, !"_ZN20activity_recognition12accel_sample17h3c0d8ec265719cfcE: %result"}
 !22 = !{!18, !16}
 !23 = !{!21, !13}
-!24 = !{i64 4647957774238521}
+!24 = !{i64 4649048695931959}
 !25 = !{!26}
 !26 = distinct !{!26, !27, !"_ZN20activity_recognition11select_mode17h694364447b243138E: %prev_pin_state"}
 !27 = distinct !{!27, !"_ZN20activity_recognition11select_mode17h694364447b243138E"}

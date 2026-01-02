@@ -118,9 +118,13 @@ fn readSensor(_input:u16) -> u8
 }
 
 // Generate sensor value (called from interrupt)
+// Keep it simple - just use lower 8 bits to avoid library calls
 #[inline(always)]
 fn generate_sensor_value(seed: u16) -> u8 {
-    (seed % 85) as u8
+    // Simple hash function using only 16-bit operations
+    // No division, multiplication stays in 16-bit
+    let hash = seed.wrapping_mul(13).wrapping_add(7);
+    (hash & 0x7F) as u8  // Limit to 0-127 range
 }
 
 /*Needs more paras than original to account for no globals in Rust*/
