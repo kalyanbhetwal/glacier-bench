@@ -20,10 +20,6 @@ features = ["rt", "critical-section"]
 
 
 # Individual benchmark binaries
-[[bin]]
-name = "cem"
-test = false
-bench = false
 
 [[bin]]
 name = "rsa"
@@ -82,6 +78,31 @@ bench = false
 
 [[bin]]
 name = "nested_interrupts"
+test = false
+bench = false
+
+[[bin]]
+name = "oc_tire"
+test = false
+bench = false
+
+[[bin]]
+name = "oc_photosense"
+test = false
+bench = false
+
+[[bin]]
+name = "oc_photosend_raw"
+test = false
+bench = false
+
+[[bin]]
+name = "oc_greenhouse"
+test = false
+bench = false
+
+[[bin]]
+name = "oc_cem"
 test = false
 bench = false
 
